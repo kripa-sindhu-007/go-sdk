@@ -134,7 +134,11 @@ func evaluateComparison[T FlagTypes](providers []NamedProvider, fallbackProvider
 						res:  &result,
 					}
 				} else {
-					notFoundChan <- struct{}{}
+					// release the sender when the evaluation is already cancelled, see #547
+					select {
+					case notFoundChan <- struct{}{}:
+					case <-grpCtx.Done():
+					}
 				}
 				return nil
 			})
